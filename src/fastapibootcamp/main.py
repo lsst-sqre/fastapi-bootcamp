@@ -45,9 +45,9 @@ app = FastAPI(
     title="fastapi-bootcamp",
     description=metadata("fastapi-bootcamp")["Summary"],
     version=version("fastapi-bootcamp"),
-    openapi_url=f"/{config.path_prefix}/openapi.json",
-    docs_url=f"/{config.path_prefix}/docs",
-    redoc_url=f"/{config.path_prefix}/redoc",
+    openapi_url=f"{config.path_prefix}/openapi.json",
+    docs_url=f"{config.path_prefix}/docs",
+    redoc_url=f"{config.path_prefix}/redoc",
     lifespan=lifespan,
 )
 """The main FastAPI application for fastapi-bootcamp."""
