@@ -44,9 +44,9 @@ astropy==6.0.1 \
     --hash=sha256:eaff9388a2fed0757bd0b4c41c9346d0edea9e7e938a4bfa8070eaabbb538a23 \
     --hash=sha256:f18536d6f97faa81ed6c9af7bb2e27b376b41b27399f862e3b13387538c966b9
     # via astroplan
-astropy-iers-data==0.2024.4.15.2.45.49 \
-    --hash=sha256:3f2b1944be1d71fcd88728e217f21fd01a59455b2990684f953cfac9b5e2f739 \
-    --hash=sha256:97a36a65abd8a4723dc3353c739364f12855a2b92b0eda47ad81afd282559997
+astropy-iers-data==0.2024.4.22.0.29.50 \
+    --hash=sha256:2986299dbeb0e4a5f1703d2aa6bba7a2fc860963e34bb2adf58f29bf79336ab5 \
+    --hash=sha256:f44afb60448016d9ebfc29c8212cf3a50724073a9a79530cc1be782f8db4d125
     # via astropy
 certifi==2024.2.2 \
     --hash=sha256:0569859f95fc761b18b45ef421b1290a0f65f147e92a1e5eb3e635f9a5e4e66f \
@@ -150,9 +150,9 @@ cryptography==42.0.5 \
     # via
     #   pyjwt
     #   safir
-fastapi==0.110.1 \
-    --hash=sha256:5df913203c482f820d31f48e635e022f8cbfe7350e4830ef05a3163925b1addc \
-    --hash=sha256:6feac43ec359dfe4f45b2c18ec8c94edb8dc2dfc461d417d9e626590c071baad
+fastapi==0.110.2 \
+    --hash=sha256:239403f2c0a3dda07a9420f95157a7f014ddb2b770acdbc984f9bdf3ead7afdb \
+    --hash=sha256:b53d673652da3b65e8cd787ad214ec0fe303cad00d2b529b86ce7db13f17518d
     # via safir
 gidgethub==5.3.0 \
     --hash=sha256:4dd92f2252d12756b13f9dd15cde322bfb0d625b6fb5d680da1567ec74b462c0 \
@@ -379,6 +379,9 @@ python-dotenv==1.0.1 \
     # via
     #   pydantic-settings
     #   uvicorn
+python-slugify==8.0.4 \
+    --hash=sha256:276540b79961052b66b7d116620b36518847f52d5fd9e3a70164fc8c50faa6b8 \
+    --hash=sha256:59202371d1d05b54a9e7720c5e038f928f45daaffe41dd10822f3907b937c856
 pytz==2024.1 \
     --hash=sha256:2a29735ea9c18baf14b448846bde5a48030ed267578472d8955cd0e7443a9812 \
     --hash=sha256:328171f4e3623139da4983451950b28e95ac706e13f3f2630a879749e7a8b319
@@ -461,6 +464,10 @@ structlog==24.1.0 \
     --hash=sha256:3f6efe7d25fab6e86f277713c218044669906537bb717c1807a09d46bca0714d \
     --hash=sha256:41a09886e4d55df25bdcb9b5c9674bccfab723ff43e0a86a1b7b236be8e57b16
     # via safir
+text-unidecode==1.3 \
+    --hash=sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8 \
+    --hash=sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93
+    # via python-slugify
 typing-extensions==4.11.0 \
     --hash=sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0 \
     --hash=sha256:c1f94d72897edaf4ce775bb7558d5b79d8126906a14ea5ed1635921406c0387a

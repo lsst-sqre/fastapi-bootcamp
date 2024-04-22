@@ -17,3 +17,4 @@ astroplan
 pydantic
 pydantic-settings
 safir>=5
+python-slugify
