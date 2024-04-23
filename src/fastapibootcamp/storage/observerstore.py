@@ -78,6 +78,46 @@ class ObserverStore:
             local_timezone=site_info["timezone"],
         )
 
+    async def get_observers(
+        self, name_pattern: str | None = None
+    ) -> list[Observer]:
+        """Get all observers in the store optionally filtering by attributes.
+
+        Patterns
+        --------
+        name_pattern
+            A substring to filter observers by name or alias. If None,
+            all observers are returned.
+        """
+        # Get all observers and ensure we don't have any missing values
+        # for type checking
+        all_ids = self._get_observer_ids()
+        all_observers = [
+            await self.get_observer_by_id(observer_id)
+            for observer_id in all_ids
+        ]
+        observers = [
+            observer for observer in all_observers if observer is not None
+        ]
+
+        # Apply filtering by attributes
+        if name_pattern:
+            observers = [
+                observer
+                for observer in observers
+                if self._has_name_pattern(observer, name_pattern)
+            ]
+
+        return observers
+
+    def _has_name_pattern(self, observer: Observer, name_pattern: str) -> bool:
+        """Check if the observer matches the name pattern."""
+        # We're just doing case-insensitive substring matching here.
+        pattern = name_pattern.lower()
+        return pattern in observer.name.lower() or any(
+            pattern in alias.lower() for alias in observer.aliases
+        )
+
     def _get_observer_ids(self) -> list[str]:
         """Get the sorted list of ID of all observers in the Astropy site
         store.

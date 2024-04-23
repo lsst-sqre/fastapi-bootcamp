@@ -34,3 +34,23 @@ class ObserverService:
         if observer is None:
             raise ObserverNotFoundError(observer_id)
         return observer
+
+    async def get_observers(
+        self, name_pattern: str | None = None
+    ) -> list[Observer]:
+        """Get all observers, possibly filtering on attributes.
+
+        Parameters
+        ----------
+        name_pattern
+            A pattern to match against observer names.
+
+        Returns
+        -------
+        list of Observer
+            Observers that match any query patterns, or all observers if no
+            query is provided.
+        """
+        return await self._observer_store.get_observers(
+            name_pattern=name_pattern
+        )

@@ -29,3 +29,29 @@ async def test_get_observer_not_found(client: AsyncClient) -> None:
     data = response.json()
     assert data["detail"][0]["type"] == "unknown_observer"
     assert data["detail"][0]["loc"] == ["path", "observer_id"]
+
+
+@pytest.mark.asyncio
+async def test_get_observers_rubin(client: AsyncClient) -> None:
+    """Test finding observing sites with Rubin in name."""
+    response = await client.get(
+        f"{config.path_prefix}/astroplan/observers?name=rubin"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["name"] == "Rubin Observatory"
+    assert data[1]["name"] == "Rubin Observatory"
+
+
+@pytest.mark.asyncio
+async def test_get_observers_with_alises(client: AsyncClient) -> None:
+    """Test finding observing sites with LSST in their aliases."""
+    response = await client.get(
+        f"{config.path_prefix}/astroplan/observers?name=lsst"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["name"] == "Rubin Observatory"
+    assert data[1]["name"] == "Rubin Observatory"

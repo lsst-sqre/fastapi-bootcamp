@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from safir.models import ErrorLocation
 
 from fastapibootcamp.dependencies.requestcontext import (
@@ -59,3 +59,41 @@ async def get_observer(
 
     # Return the response object. FastAPI takes care of serializing it to JSON.
     return response_data
+
+
+# RESTFul APIs commonly let clients list all resources of a type, usually
+# in conjunction with filtering. This endpoint lets the user list all
+# observing sites, optionally filtering by name or alias.
+#
+# e.g. GET /astroplan/observers?name=rubin
+#
+# Note: in a production you'll usually implement "pagination" to limit the
+# response size. This isn't done here, but could be a good exercise for
+# an advanced bootcamp class.
+
+
+@astroplan_router.get(
+    "/observers",
+    summary="Get all observering sites.",
+    response_model=list[ObserverModel],
+)
+async def get_observers(
+    context: Annotated[RequestContext, Depends(context_dependency)],
+    name_pattern: Annotated[
+        str | None,
+        Query(
+            alias="name",
+            description="Filter by observing site name or alias.",
+            examples=["rubin", "lsst", "gemini"],
+        ),
+    ] = None,
+) -> list[ObserverModel]:
+    factory = context.factory
+    observer_service = factory.create_observer_service()
+
+    observers = await observer_service.get_observers(name_pattern=name_pattern)
+
+    return [
+        ObserverModel.from_domain(observer=observer, request=context.request)
+        for observer in observers
+    ]
