@@ -11,7 +11,11 @@ from fastapibootcamp.dependencies.requestcontext import (
 )
 from fastapibootcamp.exceptions import ObserverNotFoundError
 
-from .models import ObserverModel
+from .models import (
+    ObservabilityResponseModel,
+    ObservationRequestModel,
+    ObserverModel,
+)
 
 astroplan_router = APIRouter()
 
@@ -97,3 +101,36 @@ async def get_observers(
         ObserverModel.from_domain(observer=observer, request=context.request)
         for observer in observers
     ]
+
+
+# This is a POST endpoint. A POST request lets the client send a JSON payload.
+# Often this is used to create a new resource, but in this case we're using it
+# to trigger a calculation that's too complex to be done in a query string.
+#
+# e.g. POST /astroplan/observers/rubin/observable
+
+
+@astroplan_router.post(
+    "/observers/{observer_id}/observable",
+    summary=(
+        "Check if a coordinate is observable for an observer at a given time."
+    ),
+    response_model=ObservabilityResponseModel,
+)
+async def post_observable(
+    observer_id: str,
+    request_data: ObservationRequestModel,
+    context: Annotated[RequestContext, Depends(context_dependency)],
+) -> ObservabilityResponseModel:
+    factory = context.factory
+    observer_service = factory.create_observer_service()
+
+    observability = await observer_service.get_target_observability(
+        observer_id=observer_id,
+        sky_coord=request_data.get_target(),
+        time=request_data.time,
+    )
+
+    return ObservabilityResponseModel.from_domain(
+        observability=observability, request=context.request
+    )

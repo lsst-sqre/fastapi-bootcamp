@@ -41,11 +41,11 @@ async def test_get_observers_rubin(client: AsyncClient) -> None:
     data = response.json()
     assert len(data) == 2
     assert data[0]["name"] == "Rubin Observatory"
-    assert data[1]["name"] == "Rubin Observatory"
+    assert data[1]["name"] == "Rubin AuxTel"
 
 
 @pytest.mark.asyncio
-async def test_get_observers_with_alises(client: AsyncClient) -> None:
+async def test_get_observers_with_aliases(client: AsyncClient) -> None:
     """Test finding observing sites with LSST in their aliases."""
     response = await client.get(
         f"{config.path_prefix}/astroplan/observers?name=lsst"
@@ -54,4 +54,23 @@ async def test_get_observers_with_alises(client: AsyncClient) -> None:
     data = response.json()
     assert len(data) == 2
     assert data[0]["name"] == "Rubin Observatory"
-    assert data[1]["name"] == "Rubin Observatory"
+    assert data[1]["name"] == "Rubin AuxTel"
+
+
+@pytest.mark.asyncio
+async def test_rubin_lmc_observability(client: AsyncClient) -> None:
+    """Test ``POST /astroplan/observers/rubin/observable``."""
+    path = f"{config.path_prefix}/astroplan/observers/rubin/observable"
+    response = await client.post(
+        path,
+        json={
+            "ra": "05h23m34.6s",
+            "dec": "-69d45m22s",
+            "time": "2024-04-24T00:00:00Z",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_night"] is True
+    assert data["above_horizon"] is True
+    assert data["observer_url"].endswith("/astroplan/observers/rubin")

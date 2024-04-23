@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
+from astropy.coordinates import SkyCoord
 from structlog.stdlib import BoundLogger
 
-from ..domain.models import Observer
+from ..domain.models import Observer, TargetObservability
 from ..exceptions import ObserverNotFoundError
 from ..storage.observerstore import ObserverStore
 
@@ -53,4 +56,28 @@ class ObserverService:
         """
         return await self._observer_store.get_observers(
             name_pattern=name_pattern
+        )
+
+    async def get_target_observability(
+        self, observer_id: str, sky_coord: SkyCoord, time: datetime
+    ) -> TargetObservability:
+        """Get the observability of a target for an observer.
+
+        Parameters
+        ----------
+        observer_id
+            The ID of the observer.
+        sky_coord
+            The target's coordinates.
+        time
+            The time of observation.
+
+        Returns
+        -------
+        TargetObservability
+            The observability domain model based on observer, target, and time.
+        """
+        observer = await self.get_observer_by_id(observer_id)
+        return TargetObservability.compute(
+            observer=observer, target=sky_coord, time=time
         )
