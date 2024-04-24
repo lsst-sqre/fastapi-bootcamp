@@ -27,7 +27,7 @@ class Config(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        env_prefix="FASTAPI-BOOTCAMP_", case_sensitive=False
+        env_prefix="FASTAPI_BOOTCAMP_", case_sensitive=False
     )
 
 
