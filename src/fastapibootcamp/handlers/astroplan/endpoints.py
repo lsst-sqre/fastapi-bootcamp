@@ -17,7 +17,7 @@ from .models import (
     ObserverModel,
 )
 
-astroplan_router = APIRouter()
+astroplan_router = APIRouter(tags=["astroplan"])
 
 # The core of a RESTful API is the "resource". In this API, observing sites are
 # the resource. This first endpoint lets the user retrieve an existing
