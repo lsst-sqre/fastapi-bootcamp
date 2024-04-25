@@ -32,28 +32,43 @@ __all__ = [
 class ObserverModel(BaseModel):
     """Model for an observer resource response."""
 
-    id: str = Field(..., description="URL-safe identifier of the site.")
+    id: str = Field(
+        ...,
+        description="URL-safe identifier of the site.",
+        examples=["rubin", "rubin-auxtel"],
+    )
 
-    name: str = Field(..., description="Short name of the observation site.")
+    name: str = Field(
+        ...,
+        description="Short name of the observation site.",
+        examples=["Rubin Observatory"],
+    )
 
     aliases: list[str] = Field(
-        description="Aliases for the observation site.", default_factory=list
+        description="Aliases for the observation site.",
+        default_factory=list,
+        examples=[["LSST", "LSST 8.4m", "Rubin"]],
     )
 
     local_timezone: str = Field(
-        ..., description="Local timezone of the observation site."
+        ...,
+        description="Local timezone of the observation site.",
+        examples=["Chile/Continental"],
     )
 
     longitude: float = Field(
-        description="Longitude of the observation site (degrees)."
+        description="Longitude of the observation site (degrees).",
+        examples=[-70.74772222222225],
     )
 
     latitude: float = Field(
-        description="Latitude of the observation site (degrees)."
+        description="Latitude of the observation site (degrees).",
+        examples=[-30.244633333333333],
     )
 
     elevation: float = Field(
-        description="Elevation of the observation site (meters)."
+        description="Elevation of the observation site (meters).",
+        examples=[2662.75],
     )
 
     self_url: str = Field(description="URL to the observer resource.")
@@ -104,6 +119,7 @@ class ObservationRequestModel(BaseModel):
     time: datetime = Field(
         description="Time of the observation. Defaults to now if unset.",
         default_factory=current_datetime,
+        examples=["2024-04-24T00:00:00Z"],
     )
 
     # This ensures that the time is always provided in UTC.
@@ -151,6 +167,7 @@ class ObservabilityResponseModel(BaseModel):
     time: datetime = Field(
         ...,
         description="Time of the observation (UTC).",
+        examples=["2024-04-24T00:00:00Z"],
     )
 
     is_night: bool = Field(
