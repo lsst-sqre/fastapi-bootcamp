@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 from safir.models import ErrorLocation
 
 from fastapibootcamp.dependencies.requestcontext import (
@@ -25,6 +25,18 @@ astroplan_router = APIRouter()
 #
 # e.g. GET /astroplan/observers/rubin
 
+# We can declare path parameters that are used commonly across multiple
+# endpoints in a single place.
+
+observer_id_type = Annotated[
+    str,
+    Path(
+        ...,
+        title="The observer's site ID.",
+        examples=["rubin", "rubin-aux", "gemini-north"],
+    ),
+]
+
 
 @astroplan_router.get(
     "/observers/{observer_id}",
@@ -32,7 +44,7 @@ astroplan_router = APIRouter()
     response_model=ObserverModel,
 )
 async def get_observer(
-    observer_id: str,
+    observer_id: observer_id_type,
     context: Annotated[RequestContext, Depends(context_dependency)],
 ) -> ObserverModel:
     # Use the request context and factory patterns to get an observer service.
@@ -118,7 +130,7 @@ async def get_observers(
     response_model=ObservabilityResponseModel,
 )
 async def post_observable(
-    observer_id: str,
+    observer_id: observer_id_type,
     request_data: ObservationRequestModel,
     context: Annotated[RequestContext, Depends(context_dependency)],
 ) -> ObservabilityResponseModel:
