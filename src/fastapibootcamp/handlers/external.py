@@ -80,6 +80,19 @@ async def get_index(
 
 # =============================================================================
 # Lesson 1: A simple GET endpoint.
+#
+# This function handles a GET request to the /hello endpoint. Since the
+# external_router is mounted at "/fastapi-bootcamp" (in main.py), the full URL
+# The full path ends up being /fastapi-bootcamp/hello. The function returns
+# simple string (*). You can try it out by visiting:
+#   http://localhost:8000/fastapi-bootcamp/hello
+#
+# (*) Well actually, FastAPI is built for JSON APIs and converts return values
+# to JSON. So even though we're returning a string, FastAPI will convert it to
+# a JSON string object. To return a true string, you can use a
+# fastapi.responses.PlainTextResponse object. FastAPI has other specialized
+# responses like HTMLResponse, StreamingResponse, and RedirectResponse.
+# https://fastapi.tiangolo.com/advanced/custom-response/
 
 
 @external_router.get("/hello", summary="Get a friendly greeting.")
