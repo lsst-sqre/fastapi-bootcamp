@@ -101,7 +101,7 @@ async def get_greeting() -> str:
 
 
 # =============================================================================
-# Lesson 2a: A GET endpoint with a JSON response and query parameters.
+# Lesson 2: A GET endpoint with a JSON response
 #
 # In a web API, the response type will typically be a JSON object. With
 # FastAPI, you'll model JSON with Pydantic models. Here, GreetingResponseModel
@@ -110,9 +110,8 @@ async def get_greeting() -> str:
 # FastAPI what the model is with the response_model parameter and/or the return
 # type annotation.
 #
-# To let the user pick the language, we support a query parameter.
 # Try it out by visiting:
-#   http://localhost:8000/fastapi-bootcamp/greeting?language=es
+#   http://localhost:8000/fastapi-bootcamp/en-greeting
 
 
 class Language(str, Enum):
@@ -129,6 +128,30 @@ class GreetingResponseModel(BaseModel):
     greeting: str = Field(..., title="The greeting message")
 
     language: Language = Field(..., title="Language of the greeting")
+
+
+@external_router.get(
+    "/en-greeting",
+    summary="Get a greeting in engish.",
+    response_model=GreetingResponseModel,
+)
+async def get_english_greeting(
+    language: Annotated[Language, Query()] = Language.en,
+) -> GreetingResponseModel:
+    return GreetingResponseModel(
+        greeting="Hello, SQuaRE Services Bootcamp!", language=language
+    )
+
+
+# =============================================================================
+# Lesson 2a: A GET endpoint with a JSON response and query parameters.
+#
+# To let the user pick the language, we support a query parameter. This is an
+# argument to the path function. The type annotation with fastapi.Query
+# indicates its a query parameter.
+#
+# Try it out by visiting:
+#   http://localhost:8000/fastapi-bootcamp/greeting?language=es
 
 
 @external_router.get(
