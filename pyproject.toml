@@ -164,6 +164,9 @@ select = ["ALL"]
 "src/fastapibootcamp/handlers/**" = [
     "D103",    # FastAPI handlers should not have docstrings
 ]
+"src/fastapibootcamp/handlers/external.py" = [
+    "ERA001",  # Allow some commented code for documentation
+]
 "tests/**" = [
     "C901",    # tests are allowed to be complex, sometimes that's convenient
     "D101",    # tests don't need docstrings
