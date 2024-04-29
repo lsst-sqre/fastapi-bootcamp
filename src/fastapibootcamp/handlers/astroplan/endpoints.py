@@ -1,6 +1,6 @@
 """Path operations for the astroplan router."""
 
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from fastapi import APIRouter, Depends, Path, Query
 from safir.models import ErrorLocation
@@ -26,9 +26,11 @@ astroplan_router = APIRouter(tags=["astroplan"])
 # e.g. GET /astroplan/observers/rubin
 
 # We can declare path parameters that are used commonly across multiple
-# endpoints in a single place.
+# endpoints in a single place. Since this is a type annotation, we can use
+# the type keyword in Python 3.12, which is equivalent to the TypeAlias type
+# before.
 
-observer_id_type = Annotated[
+ObserverIdPathParam: TypeAlias = Annotated[
     str,
     Path(
         ...,
@@ -44,7 +46,7 @@ observer_id_type = Annotated[
     response_model=ObserverModel,
 )
 async def get_observer(
-    observer_id: observer_id_type,
+    observer_id: ObserverIdPathParam,
     context: Annotated[RequestContext, Depends(context_dependency)],
 ) -> ObserverModel:
     # Use the request context and factory patterns to get an observer service.
@@ -67,14 +69,9 @@ async def get_observer(
         raise
 
     # Transform the domain object into a response object.
-    response_data = ObserverModel.from_domain(
+    return ObserverModel.from_domain(
         observer=observer, request=context.request
     )
-    # Make any modifications to the response headers or status code.
-    context.response.headers["Location"] = response_data.self_url
-
-    # Return the response object. FastAPI takes care of serializing it to JSON.
-    return response_data
 
 
 # RESTFul APIs commonly let clients list all resources of a type, usually
@@ -117,7 +114,8 @@ async def get_observers(
 
 # This is a POST endpoint. A POST request lets the client send a JSON payload.
 # Often this is used to create a new resource, but in this case we're using it
-# to trigger a calculation that's too complex to be done in a query string.
+# to trigger a calculation that's too complex to be done in a GET endpoint
+# with a query string.
 #
 # e.g. POST /astroplan/observers/rubin/observable
 
@@ -130,7 +128,7 @@ async def get_observers(
     response_model=ObservabilityResponseModel,
 )
 async def post_observable(
-    observer_id: observer_id_type,
+    observer_id: ObserverIdPathParam,
     request_data: ObservationRequestModel,
     context: Annotated[RequestContext, Depends(context_dependency)],
 ) -> ObservabilityResponseModel:
