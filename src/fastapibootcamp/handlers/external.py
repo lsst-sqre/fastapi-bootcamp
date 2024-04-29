@@ -112,7 +112,7 @@ async def get_greeting() -> str:
 #
 # To let the user pick the language, we support a query parameter.
 # Try it out by visiting:
-#   /fastapi-bootcamp/greeting?language=es
+#   http://localhost:8000/fastapi-bootcamp/greeting?language=es
 
 
 class Language(str, Enum):
@@ -163,11 +163,11 @@ async def get_multilingual_greeting(
 # convert the parameter to the correct type and pass it to the function.
 #
 # Try it out by visiting:
-#   /fastapi-bootcamp/greeting/en
+#   http://localhost:8000/fastapi-bootcamp/greeting/en
 #
 # If you visit the wrong URL, FastAPI will return a 404 error. Try it out by
 # visiting:
-#   /fastapi-bootcamp/greeting/de
+#   http://localhost:8000/fastapi-bootcamp/greeting/de
 #
 # Note: Query parameters and path parameters have different use cases in
 # RESTful APIs. Path parameters are used to specify a resource, while query
@@ -202,6 +202,21 @@ async def get_multilingual_greeting_path(
 # body is a JSON object that represents the new resource. FastAPI will
 # validate and convert the request body to the correct type and pass it to the
 # function.
+#
+# To send a POST request you need an HTTP client. Curl is a command-line
+# app that comes with most platforms:
+#  curl -X POST --json '{"name": "Rubin", "language": "en"}' \
+#    http://localhost:8000/fastapi-bootcamp/greeting
+#
+# Older versions of curl may not have the --json flag. In that case, use -H
+# to set the Content-Type header:
+#  curl -X POST -H "Content-Type: application/json" -d \
+#    '{"name": "Rubin", "language": "en"}' \
+#    http://localhost:8000/fastapi-bootcamp/greeting
+#
+# I like to use httpie, a more user-friendly REST API client
+# (https://httpie.io/ and 'brew install httpie' or 'pip install httpie'):
+#   http post :8000/fastapi-bootcamp/greeting name=Rubin language=en
 
 
 class GreetingRequestModel(BaseModel):
@@ -244,6 +259,9 @@ async def post_greeting(
 # Safir provides a logger as a FastAPI dependency. Dependencies are also
 # arguments to FastAPI path operation functions, set up with FastAPI's Depends
 # function.
+#
+# Try it out while looking at the console output for `tox run -e run`:
+#   http post :8000/fastapi-bootcamp/log-demo name=Rubin language=en
 @external_router.post(
     "/log-demo", summary="Log a message.", response_model=GreetingResponseModel
 )
