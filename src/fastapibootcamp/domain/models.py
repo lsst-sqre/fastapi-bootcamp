@@ -10,11 +10,18 @@ from astroplan import Observer as AstroplanObserver
 from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.time import Time
 
-# We're re-exporting Observer from the app's domain models to simulate the idea
-# that the Astroplan Observer is the app's domain model (i.e., this is a
-# pecularity of this demo to make it look like we've coded Astroplan in the
-# app itself).
 __all__ = ["Observer", "TargetObservability"]
+
+# The domain layer is where your application's core business logic resides.
+# In this demo, the domain is built around the Astroplan library and its
+# Observer class. In fact, we subclass Astroplan's Observer to add some
+# additional attributes that are useful for our application.
+#
+# Note that the domain layer doesn't have dependendencies on other layers like
+# the storage or web API layers (unlike the service layer, which knows about
+# the storage layer in abstract detail). The domain doesn't care that its
+# in the middle of a FastAPI app. Every other layer of the app "cares" about
+# the domain, though.
 
 
 class Observer(AstroplanObserver):
