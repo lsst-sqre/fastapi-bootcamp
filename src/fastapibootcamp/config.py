@@ -26,6 +26,17 @@ class Config(BaseSettings):
         LogLevel.INFO, title="Log level of the application's logger"
     )
 
+    clear_iers_on_startup: bool = Field(
+        False,
+        title="Clear IERS cache on application startup",
+        description=(
+            "The IERS cache is used by Astropy and Astroplan. In development "
+            "this cache can be cleared on startup to exercise populating it. "
+            "Generally the cache is not pre-existing in production, so this "
+            "option is not needed."
+        ),
+    )
+
     model_config = SettingsConfigDict(
         env_prefix="FASTAPI_BOOTCAMP_", case_sensitive=False
     )

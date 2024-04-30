@@ -13,6 +13,8 @@ starlette
 uvicorn[standard]
 
 # Other dependencies.
+astroplan
 pydantic
 pydantic-settings
 safir>=5
+python-slugify
