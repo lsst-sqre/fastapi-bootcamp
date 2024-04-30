@@ -51,13 +51,6 @@ class RequestContext:
     factory: Factory
     """The component factory."""
 
-    def get_request_username(self) -> str | None:
-        """Get the username who made the request.
-
-        Uses the X-Auth-Request-Username header passed by Gafaelfawr.
-        """
-        return self.request.headers.get("X-Auth-Request-User")
-
     def rebind_logger(self, **values: Any) -> None:
         """Add the given values to the logging context.
 
