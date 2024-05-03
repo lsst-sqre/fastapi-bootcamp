@@ -132,7 +132,7 @@ class GreetingResponseModel(BaseModel):
 
 @external_router.get(
     "/en-greeting",
-    summary="Get a greeting in engish.",
+    summary="Get a greeting in English.",
     response_model=GreetingResponseModel,
 )
 async def get_english_greeting(
@@ -156,7 +156,7 @@ async def get_english_greeting(
 
 @external_router.get(
     "/greeting",
-    summary="Get a greeting in several languages.",
+    summary="Get a greeting in several languages by using a query parameter.",
     response_model=GreetingResponseModel,
 )
 async def get_multilingual_greeting(
@@ -200,7 +200,7 @@ async def get_multilingual_greeting(
 
 @external_router.get(
     "/greeting/{language}",
-    summary="Get a greeting in several languages.",
+    summary="Get a greeting in several languages by using a path parameter.",
     response_model=GreetingResponseModel,
 )
 async def get_multilingual_greeting_path(
@@ -252,7 +252,7 @@ class GreetingRequestModel(BaseModel):
 
 @external_router.post(
     "/greeting",
-    summary="Get a greeting in several languages.",
+    summary="Get a greeting in several languages using an HTTP POST.",
     response_model=GreetingResponseModel,
 )
 async def post_greeting(
