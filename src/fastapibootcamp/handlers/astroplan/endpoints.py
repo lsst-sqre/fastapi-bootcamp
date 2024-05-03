@@ -87,7 +87,7 @@ async def get_observer(
 
 @astroplan_router.get(
     "/observers",
-    summary="Get all observering sites.",
+    summary="Get all observing sites.",
     response_model=list[ObserverModel],
 )
 async def get_observers(
