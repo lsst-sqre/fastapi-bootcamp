@@ -4,15 +4,27 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from safir.dependencies.logger import logger_dependency
 from safir.metadata import Metadata as SafirMetadata
 from safir.metadata import get_metadata
+from safir.slack.webhook import SlackRouteErrorHandler
 from structlog.stdlib import BoundLogger
 
 from ..config import config
+from ..exceptions import DemoInternalError
 
-external_router = APIRouter()
+# The APIRouter is what the individual endpoints are attached to. In main.py,
+# this external_router is mounted at the path "/fastapi-bootcamp". When we
+# deploy this on Kubernetes, that "/fastapi-bootcamp" path is available
+# through an Ingress, and therefore becomes available over the internet
+# (hence why we call these the external endpoints)
+#
+# Note the custom route class, SlackRouteErrorHandler. This is a Safir
+# API that reports exceptions to a Slack channel. See Lesson 5 for more.
+
+external_router = APIRouter(route_class=SlackRouteErrorHandler)
 """FastAPI router for all external handlers."""
 
 
@@ -317,3 +329,59 @@ async def post_log_demo(
         greeting=greeting_templates[data.language].format(name=data.name),
         language=data.language,
     )
+
+
+# =============================================================================
+# Lesson 5: Handling internal errors
+#
+# Sometimes things go wrong in your application. A database doesn't respond,
+# an external service is down, or some bug in your code causes an exception.
+# By default, FastAPI returns a 500 Internal Server Error response when an
+# uncaught exception occurs. Safir provides the ability to report these
+# uncaught errors to a Slack channel through an incoming webhook.
+#
+# To hook up this Slack reporting, you need to take the following steps:
+#
+# 1. Add a slack_webhook_url field to the configuration (config.py)
+# 2. In main.py, configure SlackRouteErrorHandler
+# 3. Add SlackRouteErrorHandler to the APIRouter in your handlers/endpoints
+#    module to automatically report any uncaught exception to Slack.
+# 4. Optionally, create custom SlackException subclasses for your application
+#    (usually in exceptions.py). Custom exceptions are great adding extra
+#    information to the error message, but you can also raise other
+#    exceptions too.
+# 5. Raise these exceptions in your application code
+#
+# If your error is caused by user input, you typically don't want to report
+# it to Slack, but instead to the user. In the astroplan application we'll
+# explore the ClientRequestError exception for this purpose in
+# handlers/astroplan/endpoints.py's get_observer function.
+#
+# Try it out:
+#   http post :8000/fastapi-bootcamp/error-demo custom_error:=true
+#
+# Compare this to raising a "regular" exception:
+#   http post :8000/fastapi-bootcamp/error-demo custom_error:=false
+
+
+class ErrorRequestModel(BaseModel):
+    """Request model for the error POST endpoint."""
+
+    custom_error: bool = Field(
+        True, title="If true, raise the custom SlackException."
+    )
+
+
+@external_router.post(
+    "/error-demo", summary="Raise an internal service exception."
+)
+async def post_error_demo(data: ErrorRequestModel) -> JSONResponse:
+    """Use the custom_error field to compare the different between raising
+    a custom SlackException and a generic exception.
+    """
+    if data.custom_error:
+        raise DemoInternalError(
+            "A custom error occurred.", custom_data="Hello error!"
+        )
+
+    raise RuntimeError("A generic error occurred.")

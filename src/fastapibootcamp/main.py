@@ -17,6 +17,7 @@ from safir.fastapi import ClientRequestError, client_request_error_handler
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 from safir.models import ErrorModel
+from safir.slack.webhook import SlackRouteErrorHandler
 from structlog import get_logger
 
 # Notice how the the config instance is imported early so it's both
@@ -104,6 +105,13 @@ app.include_router(
 
 # Add middleware.
 app.add_middleware(XForwardedMiddleware)
+
+# This error handler reports uncaught exceptions to a Slack webhook.
+if config.slack_webhook_url:
+    logger = get_logger("fastapibootcamp")
+    SlackRouteErrorHandler.initialize(
+        str(config.slack_webhook_url), "fastapi-bootcamp", logger
+    )
 
 # Add exception handler for Safir's ClientRequestError.
 app.exception_handler(ClientRequestError)(client_request_error_handler)

@@ -4,6 +4,7 @@ from typing import Annotated, TypeAlias
 
 from fastapi import APIRouter, Depends, Path, Query
 from safir.models import ErrorLocation
+from safir.slack.webhook import SlackRouteErrorHandler
 
 from fastapibootcamp.dependencies.requestcontext import (
     RequestContext,
@@ -17,7 +18,9 @@ from .models import (
     ObserverModel,
 )
 
-astroplan_router = APIRouter(tags=["astroplan"])
+astroplan_router = APIRouter(
+    tags=["astroplan"], route_class=SlackRouteErrorHandler
+)
 
 # The core of a RESTful API is the "resource". In this API, observing sites are
 # the resource. This first endpoint lets the user retrieve an existing
