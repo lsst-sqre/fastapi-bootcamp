@@ -12,7 +12,14 @@ from safir.metadata import get_metadata
 from safir.slack.webhook import SlackRouteErrorHandler
 from structlog.stdlib import BoundLogger
 
+from fastapibootcamp.dependencies.pagination import (
+    Pagination,
+    SortOrder,
+    pagination_dependency,
+)
+
 from ..config import config
+from ..dependencies.singletondependency import example_singleton_dependency
 from ..exceptions import DemoInternalError
 
 # The APIRouter is what the individual endpoints are attached to. In main.py,
@@ -384,3 +391,96 @@ async def post_error_demo(data: ErrorRequestModel) -> JSONResponse:
         )
 
     raise RuntimeError("A generic error occurred.")
+
+
+# =============================================================================
+# Lesson 6: Custom dependencies
+#
+# FastAPI dependencies are a way to add reusable code to your path operation
+# that's aware of the current request. Safir provides several dependencies,
+# see https://safir.lsst.io/api.html#module-safir.dependencies.arq etc.
+#
+# - arq_dependency provides a client to the Arq distributed job queue
+# - db_session_dependency provides a SQLAlchemy session
+# - auth_delegated_token_dependency provides a delegated token
+# - auth_dependency provides info about the current user
+# - auth_logger_dependency provides a logger with user info bound
+# - http_client_dependency provides an HTTPX async client
+# - logger_dependency provides a structlog logger (see Lesson 4)
+#
+# Besides these, you can create your own dependencies. In the astroplan
+# application we'll explore the request context dependency pattern.
+#
+# There are two types of dependencies you'll develop:
+#
+# - functional dependencies that are scoped to the current request
+# - singleton class-based dependencies that can hold
+#   persistent state that's reused across multiple requests.
+#
+# Try it out:
+#   http get :8000/fastapi-bootcamp/dependency-demo X-Custom-Header:foo
+
+# See src/fastapibootcamp/dependencies/singletondependency.py for the
+# dependency that holds a persistent value. Below is a functional dependency:
+
+
+class DependencyDemoResponseModel(BaseModel):
+    """Response model for the dependency demo endpoint."""
+
+    page: int = Field(
+        ..., title="The page number from the pagination.", examples=[1, 2, 3]
+    )
+
+    limit: int = Field(
+        ..., title="The limit from the pagination.", examples=[10, 20, 50]
+    )
+
+    order: SortOrder = Field(
+        ...,
+        title="The order from the pagination.",
+        examples=[SortOrder.asc, SortOrder.desc],
+    )
+
+    persistent_value: str = Field(
+        ...,
+        title="A persistent value provided by the dependency.",
+        examples=["crafty sloth"],
+    )
+
+
+@external_router.get(
+    "/dependency-demo",
+    summary="Demonstrate custom dependencies.",
+    response_model=DependencyDemoResponseModel,
+)
+async def get_dependency_demo(
+    # This is the functional dependency defined in
+    # src/fastapibootcamp/dependencies/pagination.py. It adds pagination
+    # query string parameters to a FastAPI path operation. Look at the
+    # generated API documentation to see that the documentation from the
+    # dependency is included in this endpoint's documentation.
+    pagination: Annotated[Pagination, Depends(pagination_dependency)],
+    # This is the singleton class-based dependency defined in
+    # src/fastapibootcamp/dependencies/singletondependency.py
+    persistent_value: Annotated[str, Depends(example_singleton_dependency)],
+    # This is a dependency from Safir
+    logger: Annotated[BoundLogger, Depends(logger_dependency)],
+) -> DependencyDemoResponseModel:
+    logger.info(
+        "Dependency demo",
+        pagination=pagination,
+        persistent_value=persistent_value,
+    )
+
+    return DependencyDemoResponseModel(
+        page=pagination.page,
+        limit=pagination.limit,
+        order=pagination.order,
+        persistent_value=persistent_value,
+    )
+
+
+# =============================================================================
+# This covers the basics of writing endpoints in FastAPI. Next, we'll explore
+# how to structure a larger application with an API/service/storage/domain
+# architecture. We'll see you there at src/fastapibootcamp/handlers/astroplan.
