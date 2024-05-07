@@ -8,7 +8,6 @@ from safir.slack.webhook import SlackRouteErrorHandler
 
 from fastapibootcamp.dependencies.pagination import (
     Pagination,
-    SortOrder,
     pagination_dependency,
 )
 from fastapibootcamp.dependencies.requestcontext import (
@@ -114,9 +113,10 @@ async def get_observers(
 
     observers_page = await observer_service.get_observers(
         name_pattern=name_pattern,
-        page=pagination.page,
-        limit=pagination.limit,
-        sort_ascending=pagination.order == SortOrder.asc,
+        # We're kind of bending the rules here by passing the Pagination
+        # directly to the service. This slightly couples API concerns with
+        # service and storage concerns.
+        pagination=pagination,
     )
 
     return ObserverCollectionResponseModel.from_domain(

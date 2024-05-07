@@ -7,6 +7,8 @@ from datetime import datetime
 from astropy.coordinates import SkyCoord
 from structlog.stdlib import BoundLogger
 
+from fastapibootcamp.dependencies.pagination import Pagination
+
 from ..domain.models import Observer, ObserversPage, TargetObservability
 from ..exceptions import ObserverNotFoundError
 from ..storage.observerstore import ObserverStore
@@ -42,16 +44,16 @@ class ObserverService:
         self,
         *,
         name_pattern: str | None = None,
-        page: int = 1,
-        limit: int = 10,
-        sort_ascending: bool = True,
+        pagination: Pagination,
     ) -> ObserversPage:
-        """Get all observers, possibly filtering on attributes.
+        """Get observers, possibly filtering on attributes.
 
         Parameters
         ----------
         name_pattern
             A pattern to match against observer names.
+        pagination
+            The pagination parameters.
 
         Returns
         -------
@@ -61,9 +63,7 @@ class ObserverService:
         """
         return await self._observer_store.get_observers(
             name_pattern=name_pattern,
-            page=page,
-            limit=limit,
-            sort_ascending=sort_ascending,
+            pagination=pagination,
         )
 
     async def get_target_observability(

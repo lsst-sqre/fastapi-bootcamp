@@ -10,6 +10,8 @@ from astroplan import Observer as AstroplanObserver
 from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.time import Time
 
+from fastapibootcamp.dependencies.pagination import Pagination
+
 __all__ = ["Observer", "ObserversPage", "TargetObservability"]
 
 # The domain layer is where your application's core business logic resides.
@@ -43,22 +45,28 @@ class Observer(AstroplanObserver):
 
 
 class ObserversPage:
-    """A page of observer objects."""
+    """A page of observer objects.
+
+    Parameters
+    ----------
+    observers
+        The observers on this page.
+    total
+        The total number of observers across all pages.
+    pagination
+        The current page.
+    """
 
     def __init__(
         self,
         *,
         observers: list[Observer],
         total: int,
-        page: int,
-        limit: int,
-        sort_ascending: bool,
+        pagination: Pagination,
     ) -> None:
         self.observers = observers
         self.total = total
-        self.page = page
-        self.limit = limit
-        self.sort_ascending = sort_ascending
+        self.pagination = pagination
 
 
 @dataclass(kw_only=True)

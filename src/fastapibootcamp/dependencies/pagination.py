@@ -35,7 +35,7 @@ class Pagination:
 
     @property
     def query_params(self) -> dict[str, str]:
-        """Get the query string parameters as a dictionary."""
+        """Get the URL query string parameters for this page."""
         return {
             "page": str(self.page),
             "limit": str(self.limit),

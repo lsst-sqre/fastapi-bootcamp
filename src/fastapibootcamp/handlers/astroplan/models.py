@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from safir.datetime import current_datetime
 from safir.pydantic import normalize_isodatetime
 
-from fastapibootcamp.dependencies.pagination import SortOrder
+from fastapibootcamp.dependencies.pagination import Pagination, SortOrder
 from fastapibootcamp.domain.models import (
     Observer,
     ObserversPage,
@@ -108,20 +108,33 @@ class ObserverModel(BaseModel):
 class PaginationModel(BaseModel):
     """Model for collection pagination information."""
 
-    total: int = Field(..., description="Total number of resources.")
-
-    page: int = Field(..., description="Page number.")
-
-    limit: int = Field(
-        ..., description="Limit to number of resources per page."
+    total: int = Field(
+        ..., description="Total number of resources.", examples=[98]
     )
 
+    page: int = Field(..., description="Page number.", examples=[1])
+
+    limit: int = Field(
+        ...,
+        description="Limit to number of resources per page.",
+        examples=[10],
+    )
+
+    order: SortOrder = Field(..., description="Sort order.", examples=["asc"])
+
     next_url: str | None = Field(
-        None, description="URL to the next page of resources."
+        None,
+        description=(
+            "URL to the next page of resources, or null if no next page."
+        ),
     )
 
     prev_url: str | None = Field(
-        None, description="URL to the previous page of resources."
+        None,
+        description=(
+            "URL to the previous page of resources, or null if no previous "
+            "page."
+        ),
     )
 
 
@@ -157,8 +170,9 @@ class ObserverCollectionResponseModel(BaseModel):
             ],
             pagination=PaginationModel(
                 total=observers_page.total,
-                page=observers_page.page,
-                limit=observers_page.limit,
+                page=observers_page.pagination.page,
+                limit=observers_page.pagination.limit,
+                order=observers_page.pagination.order,
                 next_url=cls._next_url(observers_page, request, name_pattern),
                 prev_url=cls._prev_url(observers_page, request, name_pattern),
             ),
@@ -173,17 +187,20 @@ class ObserverCollectionResponseModel(BaseModel):
     ) -> str | None:
         """Get the URL to the next page of observers."""
         next_page = (
-            observers_page.page + 1
-            if (observers_page.page * observers_page.limit)
+            observers_page.pagination.page + 1
+            if (
+                observers_page.pagination.page
+                * observers_page.pagination.limit
+            )
             < observers_page.total
             else None
         )
         return cls._url_for_page(
-            limit=observers_page.limit,
             request=request,
+            limit=observers_page.pagination.limit,
             page=next_page,
+            order=observers_page.pagination.order,
             name_pattern=name_pattern,
-            sort_ascending=observers_page.sort_ascending,
         )
 
     @classmethod
@@ -195,14 +212,16 @@ class ObserverCollectionResponseModel(BaseModel):
     ) -> str | None:
         """Get the URL to the previous page of observers."""
         prev_page = (
-            observers_page.page - 1 if observers_page.page > 1 else None
+            observers_page.pagination.page - 1
+            if observers_page.pagination.page > 1
+            else None
         )
         return cls._url_for_page(
-            limit=observers_page.limit,
             request=request,
+            limit=observers_page.pagination.limit,
             page=prev_page,
+            order=observers_page.pagination.order,
             name_pattern=name_pattern,
-            sort_ascending=observers_page.sort_ascending,
         )
 
     @classmethod
@@ -211,8 +230,8 @@ class ObserverCollectionResponseModel(BaseModel):
         *,
         limit: int,
         request: Request,
+        order: SortOrder,
         page: int | None = None,
-        sort_ascending: bool = True,
         name_pattern: str | None = None,
     ) -> str | None:
         """Get the URL for a specific page of observers."""
@@ -220,13 +239,12 @@ class ObserverCollectionResponseModel(BaseModel):
             return None
 
         base_url = request.url_for("get_observers")
-        query_params = {
-            "limit": limit,
-            "page": page,
-            "order": SortOrder.asc.value
-            if sort_ascending
-            else SortOrder.desc.value,
-        }
+        pagination = Pagination(
+            page=page,
+            limit=limit,
+            order=order,
+        )
+        query_params = pagination.query_params
         if name_pattern:
             query_params["name"] = name_pattern
         return f"{base_url}?{urlencode(query_params)}"

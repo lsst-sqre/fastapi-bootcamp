@@ -10,6 +10,8 @@ from astropy.coordinates import EarthLocation
 from slugify import slugify
 from structlog.stdlib import BoundLogger
 
+from fastapibootcamp.dependencies.pagination import Pagination, SortOrder
+
 from ..domain.models import Observer, ObserversPage
 
 # The storage layer is where your application gets and stores data in external
@@ -87,9 +89,7 @@ class ObserverStore:
         self,
         *,
         name_pattern: str | None = None,
-        page: int = 1,
-        limit: int = 10,
-        sort_ascending: bool = True,
+        pagination: Pagination,
     ) -> ObserversPage:
         """Get observers in the store optionally filtering by attributes.
 
@@ -123,12 +123,12 @@ class ObserverStore:
         # Apply sorting
         observers.sort(
             key=lambda observer: observer.name.lower(),
-            reverse=not sort_ascending,
+            reverse=pagination.order == SortOrder.desc,
         )
 
         # Apply pagination
-        start = (page - 1) * limit
-        end = start + limit
+        start = (pagination.page - 1) * pagination.limit
+        end = start + pagination.limit
         if end > len(observers):
             end = len(observers)
         observers = observers[start:end] if start < len(observers) else []
@@ -136,9 +136,7 @@ class ObserverStore:
         return ObserversPage(
             observers=observers,
             total=total_filtered_observers,
-            page=page,
-            limit=limit,
-            sort_ascending=sort_ascending,
+            pagination=pagination,
         )
 
     def _has_name_pattern(self, observer: Observer, name_pattern: str) -> bool:
