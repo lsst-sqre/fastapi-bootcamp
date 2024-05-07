@@ -38,10 +38,33 @@ async def test_get_observers_rubin(client: AsyncClient) -> None:
         f"{config.path_prefix}/astroplan/observers?name=rubin"
     )
     assert response.status_code == 200
-    data = response.json()
+    response_json = response.json()
+    data = response_json["data"]
+    pagination = response_json["pagination"]
     assert len(data) == 2
-    assert data[0]["name"] == "Rubin Observatory"
-    assert data[1]["name"] == "Rubin AuxTel"
+    assert data[0]["name"] == "Rubin AuxTel"
+    assert data[1]["name"] == "Rubin Observatory"
+
+    assert pagination["total"] == 2
+    assert pagination["page"] == 1
+    assert pagination["next_url"] is None
+    assert pagination["prev_url"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_observers_pagination(client: AsyncClient) -> None:
+    """Test paginating through all observing sites."""
+    observers = []
+    url = f"{config.path_prefix}/astroplan/observers"
+    while url is not None:
+        response = await client.get(url)
+        assert response.status_code == 200
+        response_json = response.json()
+        data = response_json["data"]
+        pagination = response_json["pagination"]
+        observers.extend(data)
+        url = pagination["next_url"]
+    assert len(observers) == pagination["total"]  # type: ignore[unreachable]
 
 
 @pytest.mark.asyncio
@@ -51,10 +74,12 @@ async def test_get_observers_with_aliases(client: AsyncClient) -> None:
         f"{config.path_prefix}/astroplan/observers?name=lsst"
     )
     assert response.status_code == 200
-    data = response.json()
+    response_json = response.json()
+    data = response_json["data"]
+
     assert len(data) == 2
-    assert data[0]["name"] == "Rubin Observatory"
-    assert data[1]["name"] == "Rubin AuxTel"
+    assert data[0]["name"] == "Rubin AuxTel"
+    assert data[1]["name"] == "Rubin Observatory"
 
 
 @pytest.mark.asyncio

@@ -17,11 +17,13 @@ from safir.fastapi import ClientRequestError, client_request_error_handler
 from safir.logging import configure_logging, configure_uvicorn_logging
 from safir.middleware.x_forwarded import XForwardedMiddleware
 from safir.models import ErrorModel
+from safir.slack.webhook import SlackRouteErrorHandler
 from structlog import get_logger
 
 # Notice how the the config instance is imported early so it's both
 # instantiated on app start-up and available to set up the app.
 from .config import config
+from .dependencies.singletondependency import example_singleton_dependency
 from .handlers.astroplan import astroplan_router
 from .handlers.external import external_router
 from .handlers.internal import internal_router
@@ -39,6 +41,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Set up and tear down the application."""
     # Any code here will be run when the application starts up.
     logger = get_logger(__name__)
+
+    # Set up the example singleton dependency.
+    await example_singleton_dependency.init()
+
     iers_cache_manager = IersCacheManager(logger)
     iers_cache_manager.config_iers_cache()
     if config.clear_iers_on_startup:
@@ -50,6 +56,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Any code here will be run when the application shuts down.
     await http_client_dependency.aclose()
+    await example_singleton_dependency.aclose()
+
     logger.info("fastapi-bootcamp application shut down complete.")
 
 
@@ -104,6 +112,13 @@ app.include_router(
 
 # Add middleware.
 app.add_middleware(XForwardedMiddleware)
+
+# This error handler reports uncaught exceptions to a Slack webhook.
+if config.slack_webhook_url:
+    logger = get_logger("fastapibootcamp")
+    SlackRouteErrorHandler.initialize(
+        str(config.slack_webhook_url), "fastapi-bootcamp", logger
+    )
 
 # Add exception handler for Safir's ClientRequestError.
 app.exception_handler(ClientRequestError)(client_request_error_handler)

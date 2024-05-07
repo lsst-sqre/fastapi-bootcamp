@@ -4,15 +4,34 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from safir.dependencies.logger import logger_dependency
 from safir.metadata import Metadata as SafirMetadata
 from safir.metadata import get_metadata
+from safir.slack.webhook import SlackRouteErrorHandler
 from structlog.stdlib import BoundLogger
 
-from ..config import config
+from fastapibootcamp.dependencies.pagination import (
+    Pagination,
+    SortOrder,
+    pagination_dependency,
+)
 
-external_router = APIRouter()
+from ..config import config
+from ..dependencies.singletondependency import example_singleton_dependency
+from ..exceptions import DemoInternalError
+
+# The APIRouter is what the individual endpoints are attached to. In main.py,
+# this external_router is mounted at the path "/fastapi-bootcamp". When we
+# deploy this on Kubernetes, that "/fastapi-bootcamp" path is available
+# through an Ingress, and therefore becomes available over the internet
+# (hence why we call these the external endpoints)
+#
+# Note the custom route class, SlackRouteErrorHandler. This is a Safir
+# API that reports exceptions to a Slack channel. See Lesson 5 for more.
+
+external_router = APIRouter(route_class=SlackRouteErrorHandler)
 """FastAPI router for all external handlers."""
 
 
@@ -292,7 +311,6 @@ async def post_log_demo(
     data: GreetingRequestModel,
     logger: Annotated[BoundLogger, Depends(logger_dependency)],
 ) -> GreetingResponseModel:
-    """Log a message."""
     # With structlog, keyword argumemnts become fields in the log message.
     #
     # Why model_dump(mode="json")? This gives us a dict, but serializes the
@@ -317,3 +335,152 @@ async def post_log_demo(
         greeting=greeting_templates[data.language].format(name=data.name),
         language=data.language,
     )
+
+
+# =============================================================================
+# Lesson 5: Handling internal errors
+#
+# Sometimes things go wrong in your application. A database doesn't respond,
+# an external service is down, or some bug in your code causes an exception.
+# By default, FastAPI returns a 500 Internal Server Error response when an
+# uncaught exception occurs. Safir provides the ability to report these
+# uncaught errors to a Slack channel through an incoming webhook.
+#
+# To hook up this Slack reporting, you need to take the following steps:
+#
+# 1. Add a slack_webhook_url field to the configuration (config.py)
+# 2. In main.py, configure SlackRouteErrorHandler
+# 3. Add SlackRouteErrorHandler to the APIRouter in your handlers/endpoints
+#    module to automatically report any uncaught exception to Slack.
+# 4. Optionally, create custom SlackException subclasses for your application
+#    (usually in exceptions.py). Custom exceptions are great adding extra
+#    information to the error message, but you can also raise other
+#    exceptions too.
+# 5. Raise these exceptions in your application code
+#
+# If your error is caused by user input, you typically don't want to report
+# it to Slack, but instead to the user. In the astroplan application we'll
+# explore the ClientRequestError exception for this purpose in
+# handlers/astroplan/endpoints.py's get_observer function.
+#
+# Try it out:
+#   http post :8000/fastapi-bootcamp/error-demo custom_error:=true
+#
+# Compare this to raising a "regular" exception:
+#   http post :8000/fastapi-bootcamp/error-demo custom_error:=false
+
+
+class ErrorRequestModel(BaseModel):
+    """Request model for the error POST endpoint."""
+
+    custom_error: bool = Field(
+        True, title="If true, raise the custom SlackException."
+    )
+
+
+@external_router.post(
+    "/error-demo", summary="Raise an internal service exception."
+)
+async def post_error_demo(data: ErrorRequestModel) -> JSONResponse:
+    """Use the custom_error field to compare the different between raising
+    a custom SlackException and a generic exception.
+    """
+    if data.custom_error:
+        raise DemoInternalError(
+            "A custom error occurred.", custom_data="Hello error!"
+        )
+
+    raise RuntimeError("A generic error occurred.")
+
+
+# =============================================================================
+# Lesson 6: Custom dependencies
+#
+# FastAPI dependencies are a way to add reusable code to your path operation
+# that's aware of the current request. Safir provides several dependencies,
+# see https://safir.lsst.io/api.html#module-safir.dependencies.arq etc.
+#
+# - arq_dependency provides a client to the Arq distributed job queue
+# - db_session_dependency provides a SQLAlchemy session
+# - auth_delegated_token_dependency provides a delegated token
+# - auth_dependency provides info about the current user
+# - auth_logger_dependency provides a logger with user info bound
+# - http_client_dependency provides an HTTPX async client
+# - logger_dependency provides a structlog logger (see Lesson 4)
+#
+# Besides these, you can create your own dependencies. In the astroplan
+# application we'll explore the request context dependency pattern.
+#
+# There are two types of dependencies you'll develop:
+#
+# - functional dependencies that are scoped to the current request
+# - singleton class-based dependencies that can hold
+#   persistent state that's reused across multiple requests.
+#
+# Try it out:
+#   http get :8000/fastapi-bootcamp/dependency-demo X-Custom-Header:foo
+
+# See src/fastapibootcamp/dependencies/singletondependency.py for the
+# dependency that holds a persistent value. Below is a functional dependency:
+
+
+class DependencyDemoResponseModel(BaseModel):
+    """Response model for the dependency demo endpoint."""
+
+    page: int = Field(
+        ..., title="The page number from the pagination.", examples=[1, 2, 3]
+    )
+
+    limit: int = Field(
+        ..., title="The limit from the pagination.", examples=[10, 20, 50]
+    )
+
+    order: SortOrder = Field(
+        ...,
+        title="The order from the pagination.",
+        examples=[SortOrder.asc, SortOrder.desc],
+    )
+
+    persistent_value: str = Field(
+        ...,
+        title="A persistent value provided by the dependency.",
+        examples=["crafty sloth"],
+    )
+
+
+@external_router.get(
+    "/dependency-demo",
+    summary="Demonstrate custom dependencies.",
+    response_model=DependencyDemoResponseModel,
+)
+async def get_dependency_demo(
+    # This is the functional dependency defined in
+    # src/fastapibootcamp/dependencies/pagination.py. It adds pagination
+    # query string parameters to a FastAPI path operation. Look at the
+    # generated API documentation to see that the documentation from the
+    # dependency is included in this endpoint's documentation.
+    pagination: Annotated[Pagination, Depends(pagination_dependency)],
+    # This is the singleton class-based dependency defined in
+    # src/fastapibootcamp/dependencies/singletondependency.py
+    persistent_value: Annotated[str, Depends(example_singleton_dependency)],
+    # This is a dependency from Safir
+    logger: Annotated[BoundLogger, Depends(logger_dependency)],
+) -> DependencyDemoResponseModel:
+    logger.info(
+        "Dependency demo",
+        pagination=pagination,
+        persistent_value=persistent_value,
+    )
+
+    return DependencyDemoResponseModel(
+        page=pagination.page,
+        limit=pagination.limit,
+        order=pagination.order,
+        persistent_value=persistent_value,
+    )
+
+
+# =============================================================================
+# This covers the basics of writing endpoints in FastAPI. Next, we'll explore
+# how to structure a larger application with an API/service/storage/domain
+# architecture. We'll see you there at src/fastapibootcamp/handlers/astroplan.

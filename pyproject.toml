@@ -168,6 +168,9 @@ select = ["ALL"]
 "src/fastapibootcamp/handlers/external.py" = [
     "ERA001",  # Allow some commented code for documentation
 ]
+"src/fastapibootcamp/dependencies/singletondependency.py" = [
+    "S311",    # Allow use of random in this module
+]
 "tests/**" = [
     "C901",    # tests are allowed to be complex, sometimes that's convenient
     "D101",    # tests don't need docstrings

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Self
+from urllib.parse import urlencode
 
 from astropy.coordinates import SkyCoord
 from fastapi import Request
@@ -20,7 +21,12 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from safir.datetime import current_datetime
 from safir.pydantic import normalize_isodatetime
 
-from fastapibootcamp.domain.models import Observer, TargetObservability
+from fastapibootcamp.dependencies.pagination import Pagination, SortOrder
+from fastapibootcamp.domain.models import (
+    Observer,
+    ObserversPage,
+    TargetObservability,
+)
 
 __all__ = [
     "ObserverModel",
@@ -78,9 +84,7 @@ class ObserverModel(BaseModel):
     # Passing the FastAPI request lets us construct URLs to related resources.
 
     @classmethod
-    def from_domain(
-        cls, *, observer: Observer, request: Request
-    ) -> ObserverModel:
+    def from_domain(cls, *, observer: Observer, request: Request) -> Self:
         """Create a model from an astroplain Observer domain object."""
         return cls(
             id=observer.observer_id,
@@ -99,6 +103,151 @@ class ObserverModel(BaseModel):
                 )
             ),
         )
+
+
+class PaginationModel(BaseModel):
+    """Model for collection pagination information."""
+
+    total: int = Field(
+        ..., description="Total number of resources.", examples=[98]
+    )
+
+    page: int = Field(..., description="Page number.", examples=[1])
+
+    limit: int = Field(
+        ...,
+        description="Limit to number of resources per page.",
+        examples=[10],
+    )
+
+    order: SortOrder = Field(..., description="Sort order.", examples=["asc"])
+
+    next_url: str | None = Field(
+        None,
+        description=(
+            "URL to the next page of resources, or null if no next page."
+        ),
+    )
+
+    prev_url: str | None = Field(
+        None,
+        description=(
+            "URL to the previous page of resources, or null if no previous "
+            "page."
+        ),
+    )
+
+
+class ObserverCollectionResponseModel(BaseModel):
+    """Model for a collection of observer resources."""
+
+    data: list[ObserverModel] = Field(
+        ..., description="List of observer resources."
+    )
+
+    pagination: PaginationModel = Field(
+        ..., description="Pagination information."
+    )
+
+    # This class method constructs the API model for the observer collection
+    # response from the internal domain, which is a list of astropy Observer
+    # objects here. Passing the FastAPI request lets us construct URLs to
+    # related resources.
+
+    @classmethod
+    def from_domain(
+        cls,
+        *,
+        observers_page: ObserversPage,
+        request: Request,
+        name_pattern: str | None,
+    ) -> Self:
+        """Create a model from an ObserversPage domain object."""
+        return cls(
+            data=[
+                ObserverModel.from_domain(observer=observer, request=request)
+                for observer in observers_page.observers
+            ],
+            pagination=PaginationModel(
+                total=observers_page.total,
+                page=observers_page.pagination.page,
+                limit=observers_page.pagination.limit,
+                order=observers_page.pagination.order,
+                next_url=cls._next_url(observers_page, request, name_pattern),
+                prev_url=cls._prev_url(observers_page, request, name_pattern),
+            ),
+        )
+
+    @classmethod
+    def _next_url(
+        cls,
+        observers_page: ObserversPage,
+        request: Request,
+        name_pattern: str | None,
+    ) -> str | None:
+        """Get the URL to the next page of observers."""
+        next_page = (
+            observers_page.pagination.page + 1
+            if (
+                observers_page.pagination.page
+                * observers_page.pagination.limit
+            )
+            < observers_page.total
+            else None
+        )
+        return cls._url_for_page(
+            request=request,
+            limit=observers_page.pagination.limit,
+            page=next_page,
+            order=observers_page.pagination.order,
+            name_pattern=name_pattern,
+        )
+
+    @classmethod
+    def _prev_url(
+        cls,
+        observers_page: ObserversPage,
+        request: Request,
+        name_pattern: str | None,
+    ) -> str | None:
+        """Get the URL to the previous page of observers."""
+        prev_page = (
+            observers_page.pagination.page - 1
+            if observers_page.pagination.page > 1
+            else None
+        )
+        return cls._url_for_page(
+            request=request,
+            limit=observers_page.pagination.limit,
+            page=prev_page,
+            order=observers_page.pagination.order,
+            name_pattern=name_pattern,
+        )
+
+    @classmethod
+    def _url_for_page(
+        cls,
+        *,
+        limit: int,
+        request: Request,
+        order: SortOrder,
+        page: int | None = None,
+        name_pattern: str | None = None,
+    ) -> str | None:
+        """Get the URL for a specific page of observers."""
+        if page is None:
+            return None
+
+        base_url = request.url_for("get_observers")
+        pagination = Pagination(
+            page=page,
+            limit=limit,
+            order=order,
+        )
+        query_params = pagination.query_params
+        if name_pattern:
+            query_params["name"] = name_pattern
+        return f"{base_url}?{urlencode(query_params)}"
 
 
 class ObservationRequestModel(BaseModel):
@@ -200,7 +349,7 @@ class ObservabilityResponseModel(BaseModel):
     @classmethod
     def from_domain(
         cls, *, observability: TargetObservability, request: Request
-    ) -> ObservabilityResponseModel:
+    ) -> Self:
         """Create a model from a TargetObservability domain object."""
         return cls(
             ra=observability.target.ra.to_string(unit="hourangle"),

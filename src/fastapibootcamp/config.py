@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from safir.logging import LogLevel, Profile
 
@@ -24,6 +24,13 @@ class Config(BaseSettings):
 
     log_level: LogLevel = Field(
         LogLevel.INFO, title="Log level of the application's logger"
+    )
+
+    slack_webhook_url: HttpUrl | None = Field(
+        None,
+        description=(
+            "Webhook URL for sending error messages to a Slack channel."
+        ),
     )
 
     clear_iers_on_startup: bool = Field(

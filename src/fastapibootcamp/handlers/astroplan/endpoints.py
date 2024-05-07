@@ -4,7 +4,12 @@ from typing import Annotated, TypeAlias
 
 from fastapi import APIRouter, Depends, Path, Query
 from safir.models import ErrorLocation
+from safir.slack.webhook import SlackRouteErrorHandler
 
+from fastapibootcamp.dependencies.pagination import (
+    Pagination,
+    pagination_dependency,
+)
 from fastapibootcamp.dependencies.requestcontext import (
     RequestContext,
     context_dependency,
@@ -14,10 +19,13 @@ from fastapibootcamp.exceptions import ObserverNotFoundError
 from .models import (
     ObservabilityResponseModel,
     ObservationRequestModel,
+    ObserverCollectionResponseModel,
     ObserverModel,
 )
 
-astroplan_router = APIRouter(tags=["astroplan"])
+astroplan_router = APIRouter(
+    tags=["astroplan"], route_class=SlackRouteErrorHandler
+)
 
 # The core of a RESTful API is the "resource". In this API, observing sites are
 # the resource. This first endpoint lets the user retrieve an existing
@@ -26,9 +34,7 @@ astroplan_router = APIRouter(tags=["astroplan"])
 # e.g. GET /astroplan/observers/rubin
 
 # We can declare path parameters that are used commonly across multiple
-# endpoints in a single place. Since this is a type annotation, we can use
-# the type keyword in Python 3.12, which is equivalent to the TypeAlias type
-# before.
+# endpoints in a single place.
 
 ObserverIdPathParam: TypeAlias = Annotated[
     str,
@@ -88,10 +94,11 @@ async def get_observer(
 @astroplan_router.get(
     "/observers",
     summary="Get all observing sites.",
-    response_model=list[ObserverModel],
+    response_model=ObserverCollectionResponseModel,
 )
 async def get_observers(
     context: Annotated[RequestContext, Depends(context_dependency)],
+    pagination: Annotated[Pagination, Depends(pagination_dependency)],
     name_pattern: Annotated[
         str | None,
         Query(
@@ -100,16 +107,23 @@ async def get_observers(
             examples=["rubin", "lsst", "gemini"],
         ),
     ] = None,
-) -> list[ObserverModel]:
+) -> ObserverCollectionResponseModel:
     factory = context.factory
     observer_service = factory.create_observer_service()
 
-    observers = await observer_service.get_observers(name_pattern=name_pattern)
+    observers_page = await observer_service.get_observers(
+        name_pattern=name_pattern,
+        # We're kind of bending the rules here by passing the Pagination
+        # directly to the service. This slightly couples API concerns with
+        # service and storage concerns.
+        pagination=pagination,
+    )
 
-    return [
-        ObserverModel.from_domain(observer=observer, request=context.request)
-        for observer in observers
-    ]
+    return ObserverCollectionResponseModel.from_domain(
+        observers_page=observers_page,
+        request=context.request,
+        name_pattern=name_pattern,
+    )
 
 
 # This is a POST endpoint. A POST request lets the client send a JSON payload.

@@ -10,7 +10,9 @@ from astropy.coordinates import EarthLocation
 from slugify import slugify
 from structlog.stdlib import BoundLogger
 
-from ..domain.models import Observer
+from fastapibootcamp.dependencies.pagination import Pagination, SortOrder
+
+from ..domain.models import Observer, ObserversPage
 
 # The storage layer is where your application gets and stores data in external
 # systems. Often the store will be a database (SQLAlchemy, Redis, etc.).
@@ -47,6 +49,11 @@ class ObserverStore:
         )
         self._sites = {slugify(key): value for key, value in site_data.items()}
 
+    @property
+    def total_count(self) -> int:
+        """The total number of observers in the store."""
+        return len(self._sites)
+
     async def get_observer_by_id(self, observer_id: str) -> Observer | None:
         """Get an observer from the store.
 
@@ -79,9 +86,12 @@ class ObserverStore:
         )
 
     async def get_observers(
-        self, name_pattern: str | None = None
-    ) -> list[Observer]:
-        """Get all observers in the store optionally filtering by attributes.
+        self,
+        *,
+        name_pattern: str | None = None,
+        pagination: Pagination,
+    ) -> ObserversPage:
+        """Get observers in the store optionally filtering by attributes.
 
         Patterns
         --------
@@ -108,7 +118,26 @@ class ObserverStore:
                 if self._has_name_pattern(observer, name_pattern)
             ]
 
-        return observers
+        total_filtered_observers = len(observers)
+
+        # Apply sorting
+        observers.sort(
+            key=lambda observer: observer.name.lower(),
+            reverse=pagination.order == SortOrder.desc,
+        )
+
+        # Apply pagination
+        start = (pagination.page - 1) * pagination.limit
+        end = start + pagination.limit
+        if end > len(observers):
+            end = len(observers)
+        observers = observers[start:end] if start < len(observers) else []
+
+        return ObserversPage(
+            observers=observers,
+            total=total_filtered_observers,
+            pagination=pagination,
+        )
 
     def _has_name_pattern(self, observer: Observer, name_pattern: str) -> bool:
         """Check if the observer matches the name pattern."""

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 
 from astroplan import Observer as AstroplanObserver
 from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.time import Time
 
-__all__ = ["Observer", "TargetObservability"]
+from ..dependencies.pagination import Pagination
+
+__all__ = ["Observer", "ObserversPage", "TargetObservability"]
 
 # The domain layer is where your application's core business logic resides.
 # In this demo, the domain is built around the Astroplan library and its
@@ -43,6 +45,30 @@ class Observer(AstroplanObserver):
 
 
 @dataclass(kw_only=True)
+class ObserversPage:
+    """A paged collection of observer items.
+
+    Parameters
+    ----------
+    observers
+        The observers on this page.
+    total
+        The total number of observers across all pages.
+    pagination
+        The current page.
+    """
+
+    observers: list[Observer]
+    """The observers in this page."""
+
+    total: int
+    """The total number of observers across all pages."""
+
+    pagination: Pagination
+    """The current page."""
+
+
+@dataclass(kw_only=True)
 class TargetObservability:
     """The observability of a target for an observer."""
 
@@ -64,7 +90,7 @@ class TargetObservability:
         observer: Observer,
         target: SkyCoord,
         time: datetime,
-    ) -> TargetObservability:
+    ) -> Self:
         """Compute the observability of a target for an observer."""
         astropy_time = Time(time)
         is_up = observer.target_is_up(astropy_time, target)
