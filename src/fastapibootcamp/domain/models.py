@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 
 from astroplan import Observer as AstroplanObserver
 from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.time import Time
 
-from fastapibootcamp.dependencies.pagination import Pagination
+from ..dependencies.pagination import Pagination
 
 __all__ = ["Observer", "ObserversPage", "TargetObservability"]
 
@@ -44,8 +44,9 @@ class Observer(AstroplanObserver):
         self.local_timezone = local_timezone
 
 
+@dataclass(kw_only=True)
 class ObserversPage:
-    """A page of observer objects.
+    """A paged collection of observer items.
 
     Parameters
     ----------
@@ -57,16 +58,14 @@ class ObserversPage:
         The current page.
     """
 
-    def __init__(
-        self,
-        *,
-        observers: list[Observer],
-        total: int,
-        pagination: Pagination,
-    ) -> None:
-        self.observers = observers
-        self.total = total
-        self.pagination = pagination
+    observers: list[Observer]
+    """The observers in this page."""
+
+    total: int
+    """The total number of observers across all pages."""
+
+    pagination: Pagination
+    """The current page."""
 
 
 @dataclass(kw_only=True)
@@ -91,7 +90,7 @@ class TargetObservability:
         observer: Observer,
         target: SkyCoord,
         time: datetime,
-    ) -> TargetObservability:
+    ) -> Self:
         """Compute the observability of a target for an observer."""
         astropy_time = Time(time)
         is_up = observer.target_is_up(astropy_time, target)
