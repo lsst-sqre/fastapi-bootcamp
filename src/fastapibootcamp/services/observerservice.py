@@ -7,7 +7,7 @@ from datetime import datetime
 from astropy.coordinates import SkyCoord
 from structlog.stdlib import BoundLogger
 
-from ..domain.models import Observer, TargetObservability
+from ..domain.models import Observer, ObserversPage, TargetObservability
 from ..exceptions import ObserverNotFoundError
 from ..storage.observerstore import ObserverStore
 
@@ -39,8 +39,13 @@ class ObserverService:
         return observer
 
     async def get_observers(
-        self, name_pattern: str | None = None
-    ) -> list[Observer]:
+        self,
+        *,
+        name_pattern: str | None = None,
+        page: int = 1,
+        limit: int = 10,
+        sort_ascending: bool = True,
+    ) -> ObserversPage:
         """Get all observers, possibly filtering on attributes.
 
         Parameters
@@ -55,7 +60,10 @@ class ObserverService:
             query is provided.
         """
         return await self._observer_store.get_observers(
-            name_pattern=name_pattern
+            name_pattern=name_pattern,
+            page=page,
+            limit=limit,
+            sort_ascending=sort_ascending,
         )
 
     async def get_target_observability(

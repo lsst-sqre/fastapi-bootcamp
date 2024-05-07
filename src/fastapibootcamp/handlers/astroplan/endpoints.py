@@ -6,6 +6,11 @@ from fastapi import APIRouter, Depends, Path, Query
 from safir.models import ErrorLocation
 from safir.slack.webhook import SlackRouteErrorHandler
 
+from fastapibootcamp.dependencies.pagination import (
+    Pagination,
+    SortOrder,
+    pagination_dependency,
+)
 from fastapibootcamp.dependencies.requestcontext import (
     RequestContext,
     context_dependency,
@@ -15,6 +20,7 @@ from fastapibootcamp.exceptions import ObserverNotFoundError
 from .models import (
     ObservabilityResponseModel,
     ObservationRequestModel,
+    ObserverCollectionResponseModel,
     ObserverModel,
 )
 
@@ -89,10 +95,11 @@ async def get_observer(
 @astroplan_router.get(
     "/observers",
     summary="Get all observing sites.",
-    response_model=list[ObserverModel],
+    response_model=ObserverCollectionResponseModel,
 )
 async def get_observers(
     context: Annotated[RequestContext, Depends(context_dependency)],
+    pagination: Annotated[Pagination, Depends(pagination_dependency)],
     name_pattern: Annotated[
         str | None,
         Query(
@@ -101,16 +108,22 @@ async def get_observers(
             examples=["rubin", "lsst", "gemini"],
         ),
     ] = None,
-) -> list[ObserverModel]:
+) -> ObserverCollectionResponseModel:
     factory = context.factory
     observer_service = factory.create_observer_service()
 
-    observers = await observer_service.get_observers(name_pattern=name_pattern)
+    observers_page = await observer_service.get_observers(
+        name_pattern=name_pattern,
+        page=pagination.page,
+        limit=pagination.limit,
+        sort_ascending=pagination.order == SortOrder.asc,
+    )
 
-    return [
-        ObserverModel.from_domain(observer=observer, request=context.request)
-        for observer in observers
-    ]
+    return ObserverCollectionResponseModel.from_domain(
+        observers_page=observers_page,
+        request=context.request,
+        name_pattern=name_pattern,
+    )
 
 
 # This is a POST endpoint. A POST request lets the client send a JSON payload.

@@ -22,7 +22,7 @@ class SortOrder(str, Enum):
 
 @dataclass
 class Pagination:
-    """Pagination request parameters."""
+    """Pagination parameters."""
 
     page: int
     """The requested page number."""
@@ -32,6 +32,15 @@ class Pagination:
 
     order: SortOrder
     """The requested sort order."""
+
+    @property
+    def query_params(self) -> dict[str, str]:
+        """Get the query string parameters as a dictionary."""
+        return {
+            "page": str(self.page),
+            "limit": str(self.limit),
+            "order": self.order.value,
+        }
 
 
 async def pagination_dependency(

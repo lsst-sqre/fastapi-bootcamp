@@ -10,7 +10,7 @@ from astroplan import Observer as AstroplanObserver
 from astropy.coordinates import AltAz, Angle, SkyCoord
 from astropy.time import Time
 
-__all__ = ["Observer", "TargetObservability"]
+__all__ = ["Observer", "ObserversPage", "TargetObservability"]
 
 # The domain layer is where your application's core business logic resides.
 # In this demo, the domain is built around the Astroplan library and its
@@ -40,6 +40,25 @@ class Observer(AstroplanObserver):
         self.observer_id = observer_id
         self.aliases = list(aliases) if aliases else []
         self.local_timezone = local_timezone
+
+
+class ObserversPage:
+    """A page of observer objects."""
+
+    def __init__(
+        self,
+        *,
+        observers: list[Observer],
+        total: int,
+        page: int,
+        limit: int,
+        sort_ascending: bool,
+    ) -> None:
+        self.observers = observers
+        self.total = total
+        self.page = page
+        self.limit = limit
+        self.sort_ascending = sort_ascending
 
 
 @dataclass(kw_only=True)

@@ -10,7 +10,7 @@ from astropy.coordinates import EarthLocation
 from slugify import slugify
 from structlog.stdlib import BoundLogger
 
-from ..domain.models import Observer
+from ..domain.models import Observer, ObserversPage
 
 # The storage layer is where your application gets and stores data in external
 # systems. Often the store will be a database (SQLAlchemy, Redis, etc.).
@@ -47,6 +47,11 @@ class ObserverStore:
         )
         self._sites = {slugify(key): value for key, value in site_data.items()}
 
+    @property
+    def total_count(self) -> int:
+        """The total number of observers in the store."""
+        return len(self._sites)
+
     async def get_observer_by_id(self, observer_id: str) -> Observer | None:
         """Get an observer from the store.
 
@@ -79,9 +84,14 @@ class ObserverStore:
         )
 
     async def get_observers(
-        self, name_pattern: str | None = None
-    ) -> list[Observer]:
-        """Get all observers in the store optionally filtering by attributes.
+        self,
+        *,
+        name_pattern: str | None = None,
+        page: int = 1,
+        limit: int = 10,
+        sort_ascending: bool = True,
+    ) -> ObserversPage:
+        """Get observers in the store optionally filtering by attributes.
 
         Patterns
         --------
@@ -108,7 +118,28 @@ class ObserverStore:
                 if self._has_name_pattern(observer, name_pattern)
             ]
 
-        return observers
+        total_filtered_observers = len(observers)
+
+        # Apply sorting
+        observers.sort(
+            key=lambda observer: observer.name.lower(),
+            reverse=not sort_ascending,
+        )
+
+        # Apply pagination
+        start = (page - 1) * limit
+        end = start + limit
+        if end > len(observers):
+            end = len(observers)
+        observers = observers[start:end] if start < len(observers) else []
+
+        return ObserversPage(
+            observers=observers,
+            total=total_filtered_observers,
+            page=page,
+            limit=limit,
+            sort_ascending=sort_ascending,
+        )
 
     def _has_name_pattern(self, observer: Observer, name_pattern: str) -> bool:
         """Check if the observer matches the name pattern."""
