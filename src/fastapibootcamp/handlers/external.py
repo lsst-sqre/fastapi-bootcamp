@@ -304,7 +304,6 @@ async def post_log_demo(
     data: GreetingRequestModel,
     logger: Annotated[BoundLogger, Depends(logger_dependency)],
 ) -> GreetingResponseModel:
-    """Log a message."""
     # With structlog, keyword argumemnts become fields in the log message.
     #
     # Why model_dump(mode="json")? This gives us a dict, but serializes the
