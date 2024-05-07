@@ -35,7 +35,11 @@ class Pagination:
 
     @property
     def query_params(self) -> dict[str, str]:
-        """Get the URL query string parameters for this page."""
+        """Get the URL query string parameters for this page.
+
+        This can be used to build a URL with a query string for the current
+        page.
+        """
         return {
             "page": str(self.page),
             "limit": str(self.limit),
@@ -66,12 +70,12 @@ async def pagination_dependency(
 
     Parameters
     ----------
-    page : int, optional
-        The page number, by default 1.
-    limit : int, optional
-        The number of items to return per page, by default 10.
-    order : SortOrder, optional
-        The sort order, by default SortOrder.asc.
+    page
+        The page number.
+    limit
+        The number of items to return per page.
+    order
+        The sort order.
 
     Returns
     -------
