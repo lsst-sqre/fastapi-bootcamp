@@ -29,9 +29,7 @@ astroplan_router = APIRouter(
 # e.g. GET /astroplan/observers/rubin
 
 # We can declare path parameters that are used commonly across multiple
-# endpoints in a single place. Since this is a type annotation, we can use
-# the type keyword in Python 3.12, which is equivalent to the TypeAlias type
-# before.
+# endpoints in a single place.
 
 ObserverIdPathParam: TypeAlias = Annotated[
     str,
