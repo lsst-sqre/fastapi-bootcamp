@@ -7,6 +7,22 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.0.0'></a>
+## 2.0.0 (2024-05-07)
+
+### Backwards-incompatible changes
+
+- The `GET /fastapi-bootcamp/astroplan/observers` endpoint now uses pagination.
+
+### New features
+
+- Demonstrate `SlackException` in the `POST /fastapi-bootcamp/error-demo` endpoint.
+- Demonstrate custom FastAPI dependencies in the `GET /fastapi-bootcamp/dependency-demo` endpoint.
+
+### Other changes
+
+Minor improvements to handler docs.
+
 <a id='changelog-1.0.0'></a>
 ## 1.0.0 (2024-04-30)
 
