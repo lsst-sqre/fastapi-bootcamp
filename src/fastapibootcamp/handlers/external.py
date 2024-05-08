@@ -380,7 +380,7 @@ class ErrorRequestModel(BaseModel):
     "/error-demo", summary="Raise an internal service exception."
 )
 async def post_error_demo(data: ErrorRequestModel) -> JSONResponse:
-    """Use the custom_error field to compare the different between raising
+    """Use the custom_error field to compare the difference between raising
     a custom SlackException and a generic exception.
     """
     if data.custom_error:
