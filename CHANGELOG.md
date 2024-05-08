@@ -7,6 +7,13 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.0.1'></a>
+## 2.0.1 (2024-05-07)
+
+### Bug fixes
+
+- Remove the unwanted query parameter from the `GET /fastapi-bootcamp/en-greeting` endpoint.
+
 <a id='changelog-2.0.0'></a>
 ## 2.0.0 (2024-05-07)
 
