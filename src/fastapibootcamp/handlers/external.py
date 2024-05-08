@@ -154,11 +154,9 @@ class GreetingResponseModel(BaseModel):
     summary="Get a greeting in English.",
     response_model=GreetingResponseModel,
 )
-async def get_english_greeting(
-    language: Annotated[Language, Query()] = Language.en,
-) -> GreetingResponseModel:
+async def get_english_greeting() -> GreetingResponseModel:
     return GreetingResponseModel(
-        greeting="Hello, SQuaRE Services Bootcamp!", language=language
+        greeting="Hello, SQuaRE Services Bootcamp!", language=Language.en
     )
 
 
@@ -382,7 +380,7 @@ class ErrorRequestModel(BaseModel):
     "/error-demo", summary="Raise an internal service exception."
 )
 async def post_error_demo(data: ErrorRequestModel) -> JSONResponse:
-    """Use the custom_error field to compare the different between raising
+    """Use the custom_error field to compare the difference between raising
     a custom SlackException and a generic exception.
     """
     if data.custom_error:
