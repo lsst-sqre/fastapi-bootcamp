@@ -154,11 +154,9 @@ class GreetingResponseModel(BaseModel):
     summary="Get a greeting in English.",
     response_model=GreetingResponseModel,
 )
-async def get_english_greeting(
-    language: Annotated[Language, Query()] = Language.en,
-) -> GreetingResponseModel:
+async def get_english_greeting() -> GreetingResponseModel:
     return GreetingResponseModel(
-        greeting="Hello, SQuaRE Services Bootcamp!", language=language
+        greeting="Hello, SQuaRE Services Bootcamp!", language=Language.en
     )
 
 
